@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>O Mistério da Casa Oliveira</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#120606;color:#fff;min-height:100vh}
+body:before{content:"";position:fixed;inset:0;background:radial-gradient(circle at 50% 0,#8d1515 0,#350909 35%,#120606 75%);z-index:-1}
+.app{width:min(920px,94%);margin:30px auto;padding-bottom:40px}
+header{text-align:center;padding:25px 15px}
+.badge{display:inline-block;background:#ff1e1e;padding:7px 14px;border-radius:30px;font-weight:bold;font-size:12px;letter-spacing:2px}
+h1{font-size:clamp(30px,7vw,54px);margin:15px 0 8px;text-shadow:0 4px 18px #000}
+.subtitle{color:#f3b2b2}
+.card{background:rgba(28,7,7,.92);border:1px solid #9f2a2a;border-radius:20px;padding:25px;box-shadow:0 15px 45px #0008;margin-top:18px}
+h2{margin-top:0;color:#ff5353}
+.story{line-height:1.65;color:#f4dddd;font-size:17px}
+.clue{border-left:4px solid #ff2525;background:#350d0d;padding:15px;margin:18px 0;border-radius:8px}
+.choices{display:grid;gap:12px;margin-top:20px}
+button{border:1px solid #d83a3a;background:#4b0e0e;color:white;padding:15px 18px;border-radius:12px;font-size:16px;text-align:left;cursor:pointer;transition:.2s}
+button:hover{background:#8f1717;transform:translateY(-2px)}
+button.correct{background:#166b38;border-color:#38c878}
+button.wrong{background:#721919;border-color:#ff5454}
+#feedback{margin-top:16px;font-weight:bold;min-height:25px}
+.progress{height:8px;background:#351010;border-radius:20px;overflow:hidden;margin:10px 0 20px}
+.bar{height:100%;background:#f22;width:20%;transition:.3s}
+.small{font-size:13px;color:#c99}
+.restart{text-align:center;margin-top:20px}
+.restart button{text-align:center;background:#b81818}
+.ending{text-align:center}
+.ending h2{font-size:32px}
+.good{color:#55e28d}.bad{color:#ff5b5b}
+
+.pt{display:block;color:#f0baba;font-size:.92em;margin-top:7px}
+small{font-size:.72em;color:#f1aaaa;font-weight:normal}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+<span class="badge">JOGO DE MISTÉRIO</span>
+<h1>The Mystery of the Oliveira House</h1><div class="subtitle">O Mistério da Casa Oliveira</div>
+<div class="subtitle">Discover who is behind the crime.<br><small>Descubra quem está por trás do crime.</small></div>
+</header>
+<div class="card">
+<div class="progress"><div class="bar" id="bar"></div></div>
+<div id="game"></div>
+</div>
+</div>
+
+<script>
+const game=document.getElementById("game"), bar=document.getElementById("bar");
+let step=0, clues=0;
+
+const scenes=[
+{title:"🌩️ A Strange Night<br><small>Uma noite estranha</small>",
+text:`During a storm, Lucas, 17, disappears during dinner. Soon after, Henrique, his father, finds his son dead in the bedroom. The police were called, but the road is blocked.<br><br><b>The killer is still inside the house.</b><br><br>In the family are Helena, Roberto, Clara, Antônio and the employee Marcos.<br><br><span class="pt">Durante uma tempestade, Lucas, de 17 anos, desaparece durante o jantar. Pouco depois, Henrique, seu pai, encontra o filho morto no quarto. A polícia foi chamada, mas a estrada está bloqueada.<br><br><b>O assassino ainda está dentro da casa.</b><br><br>Na família estão Helena, Roberto, Clara, Antônio e o funcionário Marcos.</span>`,
+buttons:[["Investigate the bedroom<br><small>Investigar o quarto</small>",1]]},
+
+{title:"🔎 Phase 1 — The Bedroom<br><small>Fase 1 — O quarto</small>",
+text:`In Lucas's bedroom there are three clues: a broken clock showing <b>10:15 PM</b>, a note saying “The truth is where nobody looks,” and a small key under the bed.<br><br><span class="pt">No quarto de Lucas há três pistas: um relógio quebrado marcando <b>22:15</b>, um bilhete dizendo “A verdade está onde ninguém procura” e uma pequena chave embaixo da cama.</span><div class="clue">🧩 RIDDLE<br><small>CHARADA</small><br><br>“I have teeth, but I don't bite. I open doors, but I am not a person. What am I?”<br><br><span class="pt">“Tenho dentes, mas não mordo. Abro portas, mas não sou pessoa. O que sou?”</span></div>`,
+buttons:[["A) Clock<br><small>Relógio</small>",2],["B) Key<br><small>Chave</small>",3],["C) Window<br><small>Janela</small>",2]]},
+
+{title:"⏳ You Lost Time<br><small>Você perdeu tempo</small>",
+text:`You chose a clue that does not solve the riddle. The storm gets stronger and time is running out.<br><br><span class="pt">Você escolheu uma pista que não resolve a charada. A tempestade fica mais forte e o tempo está acabando.</span>`,
+buttons:[["Try again<br><small>Tentar novamente</small>",1]]},
+
+{title:"📚 The Library<br><small>A biblioteca</small>",
+text:`The key opens a drawer in the library. Inside, Henrique finds an old family photograph. Behind it is written:<div class="clue">“Whoever lies first is hiding the biggest secret.”<br><br><span class="pt">“Quem mente primeiro, esconde o maior segredo.”</span></div>Henrique decides to investigate everyone's alibis.<br><br><span class="pt">Henrique decide investigar os álibis de todos.</span>`,
+buttons:[["Investigate the statements<br><small>Investigar os depoimentos</small>",4]]},
+
+{title:"🗣️ The Statements<br><small>Os depoimentos</small>",
+text:`Roberto: “I was in the living room at 10:15 PM.”<br>Helena: “I was making tea.”<br>Clara: “I was in the bathroom.”<br>Antônio: “I was sleeping.”<br>Marcos: “I was in the kitchen.”<div class="clue">🧩 RIDDLE<br><small>CHARADA</small><br><br>The living-room clock was stopped at <b>9:50 PM</b>, but Roberto said he looked at it at <b>10:15 PM</b>. Who could be lying?<br><br><span class="pt">O relógio da sala estava parado às <b>21:50</b>, mas Roberto afirmou ter olhado para ele às <b>22:15</b>. Quem pode estar mentindo?</span></div>`,
+buttons:[["A) Roberto",5],["B) Helena",6],["C) Marcos",6]]},
+
+{title:"🔐 The Secret<br><small>O segredo</small>",
+text:`Good investigation. Roberto becomes a suspect. Henrique searches for more evidence and discovers that Lucas had found documents that could reveal stolen money.<div class="clue">🧩 RIDDLE<br><small>CHARADA</small><br><br>The document contains the initials <b>R. O.</b>. Who has these initials?<br><br><span class="pt">No documento aparecem as iniciais <b>R. O.</b>. Quem possui essas iniciais?</span></div>`,
+buttons:[["A) Roberto Oliveira",7],["B) Rodrigo Oliveira",6],["C) Renato Oliveira",6]]},
+
+{title:"❌ Wrong Clue<br><small>Pista errada</small>",
+text:`That answer does not match the documents. Henrique loses valuable time and the chance to investigate the main clue.<br><br><span class="pt">Essa resposta não bate com os documentos. Henrique perde tempo e a oportunidade de investigar a pista principal.</span>`,
+buttons:[["Continue<br><small>Continuar</small>",8]]},
+
+{title:"🚪 The Final Decision<br><small>A última decisão</small>",
+text:`Henrique finds Roberto trying to leave the house. Roberto says: “You don't know anything! Get out of my way!”<br><br>Now you must decide what to do.<br><br><span class="pt">Henrique encontra Roberto tentando sair da casa. Roberto diz: “Você não sabe de nada! Saia da minha frente!”<br><br>Agora você precisa decidir o que fazer.</span>`,
+buttons:[["A) Confront Roberto alone<br><small>Confrontar Roberto sozinho</small>",9],["B) Find one more piece of evidence and call the police<br><small>Procurar mais uma prova e chamar a polícia</small>",10],["C) Let Roberto leave<br><small>Deixar Roberto ir embora</small>",9]]},
+
+{title:"🔴 BAD ENDING<br><small>FINAL RUIM</small>",
+text:`Henrique acts without gathering enough evidence. The situation becomes confusing, and Roberto escapes before the police can arrest him.<br><br><b>The killer escaped.</b><br><br><span class="pt">Henrique age sem reunir provas suficientes. A situação fica confusa, e Roberto consegue escapar antes que a polícia consiga prendê-lo.<br><br><b>O assassino escapou.</b></span>`,
+buttons:[["Play again<br><small>Jogar novamente</small>",0]],end:true,bad:true},
+
+{title:"🏆 GOOD ENDING<br><small>FINAL BOM</small>",
+text:`Henrique searches for the final piece of evidence. In the office, he finds a security recording showing Roberto entering Lucas's bedroom that night.<br><br>Henrique gives the recording to the police. Roberto is questioned and eventually confesses his involvement in the crime.<br><br><b>Roberto Oliveira is arrested.</b><br><br>Henrique finally discovers the truth and gets justice for his son.<br><br><span class="pt">Henrique procura a última prova. No escritório, encontra uma gravação de segurança mostrando Roberto entrando no quarto de Lucas naquela noite.<br><br>Henrique entrega a gravação à polícia. Roberto é interrogado e acaba confessando seu envolvimento no crime.<br><br><b>Roberto Oliveira é preso.</b><br><br>Henrique finalmente descobre a verdade e consegue justiça pelo filho.</span>`,
+buttons:[["Play again<br><small>Jogar novamente</small>",0]],end:true,good:true}
+];
+
+function render(i){
+step=i; const s=scenes[i]; bar.style.width=Math.min(100,((i+1)/11)*100)+"%";
+game.innerHTML=`<h2>${s.title}</h2><div class="story">${s.text}</div><div class="choices"></div><div id="feedback"></div>`;
+if(s.end){game.querySelector("h2").className=s.good?"good":"bad"}
+const choices=game.querySelector(".choices");
+s.buttons.forEach(([label,next])=>{
+ const b=document.createElement("button"); b.textContent=label;
+ b.onclick=()=>{ if(next===3) clues++; render(next); window.scrollTo({top:0,behavior:"smooth"}); };
+ choices.appendChild(b);
+});
+}
+render(0);
+</script>
+</body>
+</html>
